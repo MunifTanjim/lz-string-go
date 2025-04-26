@@ -3,6 +3,7 @@ package encoding
 import (
 	"errors"
 	"math"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -88,21 +89,26 @@ func concatWithFirstRune(str string, getFirstRune string) string {
 }
 
 func DecompressFromEncodedUriComponent(input string) (string, error) {
+	if input == "" {
+		return "", errors.New("input empty")
+	}
 	data := dataStruct{input, getBaseValue(input[0]), 32, 1, []string{"0", "1", "2"}, 5, 2}
 
+	var s strings.Builder
 	result, isEnd, err := getString("", &data)
+	s.WriteString(result)
 	if err != nil || isEnd {
-		return result, err
+		return s.String(), err
 	}
 	last := result
 	data.numBits += 1
 	for {
 		str, isEnd, err := getString(last, &data)
 		if err != nil || isEnd {
-			return result, err
+			return s.String(), err
 		}
 
-		result = result + str
+		s.WriteString(str)
 		appendValue(&data, concatWithFirstRune(last, str))
 		last = str
 	}
